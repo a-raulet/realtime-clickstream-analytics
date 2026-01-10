@@ -1,0 +1,63 @@
+# ==============================================
+# Real-time Clickstream Analytics - .gitignore
+# ==============================================
+
+# Data files (too large for git)
+data/raw/*.csv
+data/raw/*.zip
+
+# Delta Lake tables (generated)
+delta/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+.docker/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.local
+*.env
+
+# Temp files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Build
+dist/
+build/

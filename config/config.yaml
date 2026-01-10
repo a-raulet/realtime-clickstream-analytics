@@ -1,0 +1,79 @@
+# ==============================================
+# Real-time Clickstream Analytics Configuration
+# ==============================================
+
+# Kafka Configuration
+kafka:
+  bootstrap_servers: "kafka:9093"
+  topic: "clickstream"
+  consumer_group: "clickstream-consumer"
+  auto_offset_reset: "earliest"
+
+# Producer Configuration
+producer:
+  csv_path: "/app/data/raw/2019-Oct.csv"
+  # Delay between messages in seconds (0.01 = 100 events/sec)
+  message_delay: 0.01
+  # Batch size for sending messages
+  batch_size: 100
+  # Add current timestamp to events
+  add_timestamp: true
+
+# Spark Streaming Configuration
+spark:
+  app_name: "ClickstreamAnalytics"
+  master: "spark://spark-master:7077"
+  # Processing interval in seconds
+  trigger_interval: "10 seconds"
+  # Watermark for late data
+  watermark: "1 minute"
+  # Checkpoint location
+  checkpoint_location: "/app/delta/checkpoints"
+
+# Delta Lake Configuration
+delta:
+  base_path: "/app/delta"
+  tables:
+    events_raw: "/app/delta/events_raw"
+    events_1min: "/app/delta/aggregations/events_1min"
+    events_5min: "/app/delta/aggregations/events_5min"
+    sessions: "/app/delta/aggregations/sessions"
+    products: "/app/delta/aggregations/products"
+    funnel: "/app/delta/aggregations/funnel"
+
+# Window Configurations
+windows:
+  # Short window for real-time metrics
+  short:
+    duration: "1 minute"
+    slide: "30 seconds"
+  # Medium window for trends
+  medium:
+    duration: "5 minutes"
+    slide: "1 minute"
+  # Long window for sessions
+  long:
+    duration: "30 minutes"
+    slide: "5 minutes"
+
+# Dashboard Configuration
+dashboard:
+  refresh_interval: 5  # seconds
+  max_rows_display: 1000
+  chart_history_minutes: 30
+
+# Event Types (from eCommerce dataset)
+event_types:
+  - view
+  - cart
+  - remove_from_cart
+  - purchase
+
+# Funnel stages for conversion analysis
+funnel_stages:
+  - name: "View"
+    event_type: "view"
+  - name: "Add to Cart"
+    event_type: "cart"
+  - name: "Purchase"
+    event_type: "purchase"

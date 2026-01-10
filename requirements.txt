@@ -1,0 +1,25 @@
+# ==============================================
+# Real-time Clickstream Analytics Dependencies
+# ==============================================
+
+# Kafka
+kafka-python==2.0.2
+
+# Spark and Delta Lake
+pyspark==3.5.0
+delta-spark==3.1.0
+deltalake==0.15.1
+
+# Data Processing
+pandas==2.1.4
+pyarrow==15.0.0
+
+# Dashboard
+streamlit==1.31.0
+plotly==5.18.0
+
+# Configuration
+pyyaml==6.0.1
+
+# Utilities
+python-dateutil==2.8.2

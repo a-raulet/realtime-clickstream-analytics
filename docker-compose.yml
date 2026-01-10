@@ -1,0 +1,149 @@
+services:
+  # ============================================
+  # ZOOKEEPER - Coordination service for Kafka
+  # ============================================
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - clickstream-network
+    healthcheck:
+      test: echo ruok | nc localhost 2181 | grep imok
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # KAFKA - Message broker
+  # ============================================
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 1
+      KAFKA_LOG_RETENTION_BYTES: 536870912
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+    volumes:
+      - kafka-data:/kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - clickstream-network
+    healthcheck:
+      test: kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # KAFKA PRODUCER - Replay CSV to Kafka
+  # ============================================
+  kafka-producer:
+    build:
+      context: ./docker/producer
+      dockerfile: Dockerfile
+    container_name: kafka-producer
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - KAFKA_TOPIC=clickstream
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - clickstream-network
+    command: ["python", "/app/src/producer/kafka_producer.py"]
+    profiles:
+      - producer
+
+  # ============================================
+  # SPARK STREAMING JOB (Local Mode)
+  # ============================================
+  spark-streaming:
+    image: apache/spark:3.5.0
+    container_name: spark-streaming
+    user: root
+    ports:
+      - "4040:4040"
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./delta:/app/delta
+      - ./config:/app/config
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - KAFKA_TOPIC=clickstream
+      - DELTA_PATH=/app/delta
+      - SPARK_HOME=/opt/spark
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - clickstream-network
+    command: >
+      /opt/spark/bin/spark-submit
+      --master local[2]
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,io.delta:delta-spark_2.12:3.1.0
+      --conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension
+      --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
+      --conf spark.driver.memory=2g
+      --conf spark.executor.memory=1g
+      --conf spark.ui.port=4040
+      /app/src/streaming/spark_streaming.py
+    profiles:
+      - streaming
+
+  # ============================================
+  # STREAMLIT DASHBOARD
+  # ============================================
+  streamlit:
+    build:
+      context: ./docker/streamlit
+      dockerfile: Dockerfile
+    container_name: streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./src/dashboard:/app
+      - ./delta:/app/delta
+      - ./config:/app/config
+    environment:
+      - DELTA_PATH=/app/delta
+    networks:
+      - clickstream-network
+    profiles:
+      - dashboard
+
+# ============================================
+# NETWORKS
+# ============================================
+networks:
+  clickstream-network:
+    driver: bridge
+
+# ============================================
+# VOLUMES
+# ============================================
+volumes:
+  kafka-data:
