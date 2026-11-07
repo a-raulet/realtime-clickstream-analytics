@@ -1,6 +1,22 @@
 # Real-time Clickstream Analytics
 
-Pipeline de streaming analytics en temps réel pour l'analyse du comportement utilisateur e-commerce.
+**Business problem.** E-commerce teams usually see yesterday's funnel. When a product page breaks or a campaign drives traffic that does not convert, they find out a day late. The goal: views, add-to-carts, purchases and revenue per product, updated within seconds.
+
+**Key result.** A local streaming pipeline that replays a real cosmetics-shop event log (view, cart, remove_from_cart, purchase) through Kafka. Spark Structured Streaming computes 1-minute windows (30 s slide) and 5-minute windows (1 min slide), a view → cart → purchase funnel and top products by views, purchases and revenue, written to Delta Lake and shown in an auto-refreshing Streamlit dashboard.
+
+TODO(arnaud): add measured throughput and end-to-end latency (none are recorded in the repo).
+
+**Stack.** Apache Kafka + Zookeeper, PySpark 3.5 Structured Streaming, Delta Lake 3.1, Streamlit + Plotly, Docker Compose.
+
+**How to run.**
+```bash
+# download the Kaggle "eCommerce Events History in Cosmetics Shop" CSVs into data/raw/
+make pipeline          # starts Kafka, Spark job, producer and dashboard
+# dashboard: http://localhost:8501 · Spark UI: http://localhost:4040
+make stop
+```
+
+---
 
 ## Apercu
 
