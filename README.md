@@ -4,7 +4,7 @@
 
 **Key result.** A local streaming pipeline that replays a real cosmetics-shop event log (view, cart, remove_from_cart, purchase) through Kafka. Spark Structured Streaming computes 1-minute windows (30 s slide) and 5-minute windows (1 min slide), a view → cart → purchase funnel and top products by views, purchases and revenue, written to Delta Lake and shown in an auto-refreshing Streamlit dashboard.
 
-(personal reminder: add measured throughput and end-to-end latency (none are recorded in the repo)).
+<!-- personal reminder: add measured throughput and end-to-end latency (none are recorded in the repo)). -->
 
 **Stack.** Apache Kafka + Zookeeper, PySpark 3.5 Structured Streaming, Delta Lake 3.1, Streamlit + Plotly, Docker Compose.
 
